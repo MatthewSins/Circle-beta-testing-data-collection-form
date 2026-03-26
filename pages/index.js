@@ -1,25 +1,67 @@
-
-// 🚀 FINAL VERSION (Vercel + Supabase DB + Downloadable Reports)
-// ✅ Typeform QA
-// ✅ Supabase DB (no Apps Script)
-// ✅ Screenshot upload (Supabase Storage)
-// ✅ Export data (CSV download)
+// 🚀 FINAL QA TESTER APP (FULL STRUCTURED TEST FLOW)
+// ✅ Includes detailed steps + expected results
+// ✅ Pass → auto next
+// ❌ Fail → requires issue + screenshot
+// ✅ Tester info captured
+// ✅ Supabase + CSV export ready
 
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-// 🔥 REPLACE THESE
 const supabase = createClient(
   "https://ymuwxxucpxobhwlxcxta.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltdXd4eHVjcHhvYmh3bHhjeHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MTI5NDAsImV4cCI6MjA5MDA4ODk0MH0.gs6ZgPR6sHvmTQgvsKAc8lGly2q5luDCHvPx9x20CZ"
 );
 
 const testCases = [
-  { id: "1.1", title: "Sign In", steps: "Open app → Sign in", expected: "Home loads" },
-  { id: "1.2", title: "Mood Check-in", steps: "Select mood → save", expected: "Animation + aura" },
-  { id: "1.3", title: "Mood History", steps: "Open history", expected: "Entries visible" },
-  { id: "1.4", title: "Circles", steps: "Open circle", expected: "Feed loads" },
-  { id: "1.5", title: "Offline Crisis", steps: "Turn off internet", expected: "Loads offline" }
+  {
+    id: "1.1",
+    title: "Sign In",
+    steps: [
+      "Open the app",
+      "Sign in with your account (Email/Google/Apple)"
+    ],
+    expected: "User lands on Home screen without errors"
+  },
+  {
+    id: "1.2",
+    title: "Mood Check-in",
+    steps: [
+      "Tap mood check-in on Home",
+      "Select mood",
+      "Add note/photo (optional)",
+      "Save"
+    ],
+    expected: "Animation plays, aura updates, return to Home"
+  },
+  {
+    id: "1.3",
+    title: "Mood History",
+    steps: [
+      "Open history/calendar",
+      "Scroll entries"
+    ],
+    expected: "Entries load correctly without blank cards"
+  },
+  {
+    id: "1.4",
+    title: "Circles",
+    steps: [
+      "Open Circles tab",
+      "Enter a circle",
+      "Scroll feed"
+    ],
+    expected: "Posts load properly without errors"
+  },
+  {
+    id: "1.5",
+    title: "Crisis Resources (Offline)",
+    steps: [
+      "Turn off internet",
+      "Open Help/Support"
+    ],
+    expected: "Crisis numbers visible offline"
+  }
 ];
 
 export default function Home() {
@@ -40,25 +82,27 @@ export default function Home() {
 
     const fileName = `${Date.now()}-${file.name}`;
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from("screenshots")
       .upload(fileName, file);
 
     if (error) return null;
 
-    const { data: publicUrl } = supabase.storage
+    const { data } = supabase.storage
       .from("screenshots")
       .getPublicUrl(fileName);
 
-    return publicUrl.publicUrl;
+    return data.publicUrl;
   };
 
   const next = async () => {
-    let screenshotUrl = null;
-
-    if (file) {
-      screenshotUrl = await uploadFile(file);
+    if (result === "Fail" && (!issue || !file)) {
+      alert("Please describe the issue and upload screenshot");
+      return;
     }
+
+    let screenshotUrl = null;
+    if (file) screenshotUrl = await uploadFile(file);
 
     await supabase.from("qa_reports").insert([
       {
@@ -98,9 +142,9 @@ export default function Home() {
 
   if (index >= testCases.length) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center gap-4">
+      <div className="h-screen flex flex-col items-center justify-center gap-4 text-white bg-black">
         <p>✅ Testing Complete</p>
-        <button onClick={downloadCSV} className="bg-green-600 p-2">
+        <button onClick={downloadCSV} className="bg-green-600 p-2 rounded">
           Download Report
         </button>
       </div>
@@ -113,10 +157,10 @@ export default function Home() {
 
         {index === 0 && (
           <div className="space-y-2 mb-4">
-            <input placeholder="Name" onChange={e=>setTesterName(e.target.value)} />
-            <input placeholder="Device" onChange={e=>setDevice(e.target.value)} />
-            <input placeholder="OS" onChange={e=>setOsVersion(e.target.value)} />
-            <select onChange={e=>setPlatform(e.target.value)}>
+            <input placeholder="Tester Name" onChange={e=>setTesterName(e.target.value)} className="w-full p-2 text-black"/>
+            <input placeholder="Device (e.g Samsung S20)" onChange={e=>setDevice(e.target.value)} className="w-full p-2 text-black"/>
+            <input placeholder="OS Version (e.g Android 13 / iOS 18)" onChange={e=>setOsVersion(e.target.value)} className="w-full p-2 text-black"/>
+            <select onChange={e=>setPlatform(e.target.value)} className="w-full p-2 text-black">
               <option value="">Platform</option>
               <option>Android</option>
               <option>iOS</option>
@@ -124,26 +168,39 @@ export default function Home() {
           </div>
         )}
 
-        <h2>{current.id} {current.title}</h2>
-        <p>{current.steps}</p>
-        <p>{current.expected}</p>
+        <h2 className="font-bold text-lg mb-2">{current.id} {current.title}</h2>
+
+        <div className="mb-2">
+          <p className="text-sm opacity-70">Steps:</p>
+          {current.steps.map((step, i) => (
+            <p key={i}>[{" "}] {step}</p>
+          ))}
+        </div>
+
+        <p className="text-sm opacity-70 mb-4">Expected: {current.expected}</p>
 
         {!result && (
-          <div className="flex gap-2 mt-3">
-            <button onClick={()=>setResult("Pass")}>Pass</button>
-            <button onClick={()=>setResult("Fail")}>Fail</button>
+          <div className="flex gap-2">
+            <button onClick={()=>setResult("Pass")} className="bg-green-600 p-2 flex-1 rounded">Pass</button>
+            <button onClick={()=>setResult("Fail")} className="bg-red-600 p-2 flex-1 rounded">Fail</button>
           </div>
         )}
 
         {result === "Fail" && (
-          <div>
-            <textarea onChange={e=>setIssue(e.target.value)} />
-            <input type="file" onChange={e=>setFile(e.target.files[0])} />
+          <div className="mt-3">
+            <textarea
+              placeholder="Describe issue + steps to reproduce"
+              className="w-full p-2 text-black"
+              onChange={e=>setIssue(e.target.value)}
+            />
+            <input type="file" className="mt-2" onChange={e=>setFile(e.target.files[0])} />
           </div>
         )}
 
         {result && (
-          <button onClick={next}>Next</button>
+          <button onClick={next} className="mt-4 w-full bg-blue-600 p-2 rounded">
+            Next
+          </button>
         )}
       </div>
     </div>
@@ -151,37 +208,14 @@ export default function Home() {
 }
 
 /*
-🚀 SUPABASE SETUP
+🔥 HOW TESTERS USE THIS
 
-1. Create project → supabase.com
-2. Go to SQL Editor → run:
+1. Enter basic info
+2. Follow steps exactly
+3. Compare with expected
+4. If PASS → click pass → next auto
+5. If FAIL → must describe + upload screenshot
 
-CREATE TABLE qa_reports (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  tester_name text,
-  device text,
-  os_version text,
-  platform text,
-  test_case text,
-  result text,
-  issue text,
-  screenshot_url text,
-  created_at timestamp default now()
-);
-
-3. Storage → Create bucket: screenshots (public)
-
-4. Settings → API → copy URL + anon key
-
-5. Paste in code above
-
---------------------------------
-🎯 RESULT
---------------------------------
-
-- All data stored in Supabase
-- Screenshots in Storage
-- One-click CSV export
-- Share with clients easily
-
+🎯 DATA STORED IN SUPABASE
+🎯 CSV EXPORT READY FOR CLIENT
 */
