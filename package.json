@@ -1,10 +1,15 @@
 {
   "name": "qa-app",
   "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
-    "react": "latest",
-    "react-dom": "latest",
-    "@supabase/supabase-js": "latest",
-    "next": "latest"
+    "next": "14.2.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@supabase/supabase-js": "^2.0.0"
   }
 }
