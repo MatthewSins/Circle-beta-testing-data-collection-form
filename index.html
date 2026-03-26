@@ -11,6 +11,7 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
         .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); }
         .gradient-text { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .progress-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .animate-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -20,7 +21,7 @@
     <div id="app" class="max-w-xl mx-auto p-5 md:pt-12 pb-20">
         <div id="loader" class="flex flex-col items-center justify-center mt-40">
             <div class="w-10 h-10 border-4 border-purple-100 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-            <p class="text-slate-400 font-bold tracking-widest text-xs uppercase">Initialising Suite...</p>
+            <p class="text-slate-400 font-bold tracking-widest text-xs uppercase">Initialising Master Suite...</p>
         </div>
     </div>
 
@@ -33,22 +34,34 @@
         const _supabase = createClient(SB_URL, SB_KEY);
 
         const TEST_SESSIONS = [
+            // SECTION 1
             { id: "1.1", section: "Core Flow", title: "Sign In", steps: ["Open app", "Sign in with Email/Google/Apple"], expected: "Land on Home screen" },
-            { id: "1.2", section: "Core Flow", title: "Mood Check-in", steps: ["Tap mood check-in", "Select level + note", "Save"], expected: "Celebration plays, aura updates" },
-            { id: "1.3", section: "Core Flow", title: "Mood History", steps: ["Tap calendar icon", "Scroll entries"], expected: "Entries load, no blank cards" },
+            { id: "1.2", section: "Core Flow", title: "Mood Check-in", steps: ["Tap mood area", "Select level + note", "Save"], expected: "Celebration plays, aura updates" },
+            { id: "1.3", section: "Core Flow", title: "Mood History", steps: ["Tap calendar", "Scroll entries"], expected: "Entries load, no blank cards" },
             { id: "1.4", section: "Core Flow", title: "Circles Feed", steps: ["Tap Circles tab", "Open a circle"], expected: "Posts load, no spinning" },
-            { id: "1.5", section: "Core Flow", title: "Crisis (Offline)", steps: ["Turn off Data", "Go to Help & Support"], expected: "NZ numbers show without internet" },
+            { id: "1.5", section: "Core Flow", title: "Crisis (Offline)", steps: ["Turn off Data", "Go to Help & Support"], expected: "NZ numbers show offline" },
             { id: "1.6", section: "Core Flow", title: "Account Settings", steps: ["Open Profile", "Tap Settings"], expected: "Settings load, no crashes" },
-            { id: "2.1", section: "New Features", title: "Day 7 Aura Unlock", steps: ["Check in for 7 days"], expected: "Full-screen celebration appears" },
-            { id: "2.3", section: "New Features", title: "Low-Mood Response", steps: ["Log mood ≤ 3"], expected: "Supportive overlay appears" },
+            // SECTION 2
+            { id: "2.1", section: "New Features", title: "7-Day Aura Unlock", steps: ["Check in for 7 days"], expected: "Celebration + Share button" },
+            { id: "2.3", section: "New Features", title: "Low-Mood Response", steps: ["Log mood ≤ 3"], expected: "Supportive overlay + Breathing Exercise" },
             { id: "2.4", section: "New Features", title: "Monthly Summary", steps: ["History -> View Summary"], expected: "Summary card with Share button" },
-            { id: "2.5", section: "New Features", title: "Aura Sharing", steps: ["Share Aura"], expected: "Share sheet opens" },
+            { id: "2.5", section: "New Features", title: "Aura Sharing", steps: ["Share Aura"], expected: "Native share sheet opens" },
             { id: "2.6", section: "New Features", title: "Circle Invite Link", steps: ["Invite -> Share Link"], expected: "Link: mycircle.co.nz/join/..." },
-            { id: "2.10", section: "New Features", title: "Reach Out", steps: ["Home -> Reach out"], expected: "Confirmation modal" },
-            { id: "3.1", section: "Premium", title: "Upgrade Screen", steps: ["Settings -> Upgrade"], expected: "Pricing comparison screen" },
-            { id: "3.4", section: "Premium", title: "Sandbox Purchase", steps: ["Subscribe with test account"], expected: "Transaction completes" },
-            { id: "4.1", section: "Edge Cases", title: "Offline Entry", steps: ["Log mood while offline"], expected: "Saves locally/Syncs later" }
-            // (Remaining tests truncated for code length; you can add them back following this pattern)
+            { id: "2.7", section: "New Features", title: "Weekly Digest", steps: ["Inside circle -> Check 'This Week'"], expected: "Stats card appears" },
+            { id: "2.8", section: "New Features", title: "Easter Eggs", steps: ["Profile -> Scroll to Discoveries"], expected: "Grid of milestone cards" },
+            { id: "2.9", section: "New Features", title: "Mood-Unlocked", steps: ["Log mood", "Check exercises"], expected: "New content alert" },
+            { id: "2.10", section: "New Features", title: "Reach Out", steps: ["Home -> Reach out"], expected: "Modal appears, anonymous toggle" },
+            { id: "2.11", section: "New Features", title: "Warmth Event", steps: ["Open app after member reaches out"], expected: "Gradient overlay response options" },
+            // SECTION 3
+            { id: "3.1", section: "Premium", title: "Upgrade Screen", steps: ["Settings -> Upgrade"], expected: "Pricing screen" },
+            { id: "3.2", section: "Premium", title: "Circle Limit", steps: ["Create 4th circle"], expected: "Upgrade prompt appears" },
+            { id: "3.3", section: "Premium", title: "Pricing Load", steps: ["Check monthly/annual rates"], expected: "Prices load (not blank)" },
+            { id: "3.4", section: "Premium", title: "iOS Sandbox", steps: ["Subscribe with sandbox ID"], expected: "Transaction completes" },
+            { id: "3.5", section: "Premium", title: "Android Test", steps: ["Subscribe with test billing"], expected: "Upgrade active" },
+            { id: "3.6", section: "Premium", title: "Restore", steps: ["Tap Restore Purchases"], expected: "Confirmation message" },
+            // SECTION 4
+            { id: "4.1", section: "Edge Cases", title: "Offline Entry", steps: ["Log mood while offline"], expected: "Local save or clear error" },
+            { id: "4.2", section: "Edge Cases", title: "Leave Circle", steps: ["Circle Settings -> Leave"], expected: "Removed from list" }
         ];
 
         let currentIndex = 0;
@@ -59,62 +72,69 @@
         function renderSetup() {
             app.innerHTML = `
                 <div class="glass-card p-8 rounded-[2.5rem] shadow-2xl animate-in text-center">
-                    <h1 class="text-3xl font-extrabold gradient-text mb-6">Circle v3.1.1</h1>
+                    <h1 class="text-3xl font-extrabold gradient-text mb-6 tracking-tight">Circle v3.1.1</h1>
                     <div class="space-y-4 text-left">
-                        <input id="tName" placeholder="Tester Name" class="w-full p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500">
-                        <input id="tDevice" placeholder="Device (e.g. S20)" class="w-full p-4 rounded-2xl border border-slate-200 outline-none">
+                        <input id="tName" placeholder="Tester Name" class="w-full p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 shadow-sm">
+                        <input id="tDevice" placeholder="Device (e.g. S20)" class="w-full p-4 rounded-2xl border border-slate-200 outline-none shadow-sm">
                         <div class="flex gap-4">
-                            <input id="tOS" placeholder="OS (e.g. Android 13)" class="flex-1 p-4 rounded-2xl border border-slate-200 outline-none">
-                            <select id="tPlatform" class="w-32 p-4 rounded-2xl border border-slate-200 bg-white">
+                            <input id="tOS" placeholder="OS (e.g. Android 13)" class="flex-1 p-4 rounded-2xl border border-slate-200 outline-none shadow-sm">
+                            <select id="tPlatform" class="w-32 p-4 rounded-2xl border border-slate-200 bg-white font-bold">
                                 <option>iOS</option><option>Android</option>
                             </select>
                         </div>
-                        <button onclick="startTesting()" class="w-full py-5 bg-purple-600 text-white rounded-2xl font-bold shadow-lg mt-4">Start Testing</button>
+                        <button onclick="startTesting()" class="w-full py-5 bg-purple-600 text-white rounded-2xl font-bold shadow-lg mt-4 transform active:scale-95 transition">Start Testing</button>
                     </div>
                 </div>`;
         }
 
         function renderTest() {
             const test = TEST_SESSIONS[currentIndex];
+            const progress = ((currentIndex + 1) / TEST_SESSIONS.length) * 100;
+
             app.innerHTML = `
-                <div class="flex justify-between items-center mb-6 px-2">
+                <div class="flex justify-between items-center mb-4 px-2">
                     <span class="px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold uppercase tracking-widest">${test.section}</span>
                     <div class="flex gap-2">
-                        <button onclick="nav(-1)" class="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400 hover:text-purple-600 disabled:opacity-30" ${currentIndex === 0 ? 'disabled' : ''}>←</button>
-                        <button onclick="nav(1)" class="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400 hover:text-purple-600 disabled:opacity-30" ${currentIndex === TEST_SESSIONS.length - 1 ? 'disabled' : ''}>→</button>
+                        <button onclick="nav(-1)" class="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400 disabled:opacity-30" ${currentIndex === 0 ? 'disabled' : ''}>←</button>
+                        <button onclick="nav(1)" class="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-400 disabled:opacity-30" ${currentIndex === TEST_SESSIONS.length - 1 ? 'disabled' : ''}>→</button>
                     </div>
+                </div>
+
+                <div class="w-full bg-slate-200 h-2 rounded-full mb-6 overflow-hidden">
+                    <div class="progress-fill h-full bg-purple-600 rounded-full" style="width: ${progress}%"></div>
                 </div>
                 
                 <div class="glass-card rounded-[2.5rem] shadow-xl overflow-hidden border border-white animate-in">
                     <div class="p-8">
                         <h2 class="text-2xl font-extrabold text-slate-800 mb-6 tracking-tight flex items-center gap-3">
-                            <span class="text-purple-400 text-sm opacity-50 font-mono">${test.id}</span> ${test.title}
+                            <span class="text-purple-400 text-sm opacity-50 font-mono italic">${test.id}</span> ${test.title}
                         </h2>
                         <ul class="space-y-3 mb-8">
                             ${test.steps.map(s => `<li class="flex gap-3 text-slate-600 font-semibold text-sm leading-relaxed"><div class="mt-2 w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"></div>${s}</li>`).join('')}
                         </ul>
                         <div class="bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 text-center">
-                            <p class="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest mb-1">Expected</p>
+                            <p class="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest mb-1">Expected Outcome</p>
                             <p class="text-indigo-900 font-bold text-sm">${test.expected}</p>
                         </div>
                     </div>
 
-                    <div id="action-area" class="grid grid-cols-2 border-t border-slate-100">
+                    <div id="action-area" class="grid grid-cols-2 border-t border-slate-100 bg-white">
                         <button onclick="showFailForm()" class="py-8 font-extrabold text-red-500 hover:bg-red-50 transition border-r border-slate-100 uppercase text-xs tracking-widest">Fail</button>
                         <button onclick="submitResult('PASS')" class="py-8 font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 uppercase text-xs tracking-widest">Pass & Next</button>
                     </div>
-                </div>`;
+                </div>
+                <p class="text-center mt-6 text-[10px] font-bold text-slate-400 tracking-widest uppercase italic">Progress: ${currentIndex + 1} of ${TEST_SESSIONS.length}</p>`;
         }
 
         function showFailForm() {
             document.getElementById('action-area').outerHTML = `
                 <div class="p-8 border-t border-slate-100 bg-slate-50/50 animate-in">
-                    <textarea id="failSteps" placeholder="Steps to reproduce..." class="w-full p-4 rounded-2xl border border-slate-200 mb-4 h-32 outline-none focus:ring-2 focus:ring-red-500 bg-white"></textarea>
+                    <textarea id="failSteps" placeholder="Describe the issue..." class="w-full p-4 rounded-2xl border border-slate-200 mb-4 h-32 outline-none focus:ring-2 focus:ring-red-500 bg-white"></textarea>
                     <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="uploadImage(this)">
                     <button id="upBtn" onclick="document.getElementById('fileInput').click()" class="w-full py-4 mb-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 text-xs font-bold uppercase hover:bg-white hover:border-purple-400 transition">Attach Screenshot</button>
                     <div class="flex gap-4">
                         <button onclick="renderTest()" class="flex-1 font-bold text-slate-400 uppercase text-[10px]">Cancel</button>
-                        <button onclick="submitResult('FAIL')" class="flex-[2] py-4 bg-red-500 text-white rounded-2xl font-bold uppercase text-xs tracking-widest">Submit Bug</button>
+                        <button onclick="submitResult('FAIL')" class="flex-[2] py-4 bg-red-500 text-white rounded-2xl font-bold uppercase text-xs tracking-widest shadow-lg shadow-red-100">Submit Bug</button>
                     </div>
                 </div>`;
         }
@@ -138,26 +158,13 @@
         async function submitResult(status) {
             const steps = document.getElementById('failSteps')?.value || '';
             const { error } = await _supabase.from('test_results').insert([{
-                tester_name: testerInfo.name,
-                device: testerInfo.device,
-                os: testerInfo.os,
-                platform: testerInfo.platform,
-                test_id: TEST_SESSIONS[currentIndex].id,
-                status: status,
-                steps_to_reproduce: steps,
-                image_url: uploadedImageUrl
+                tester_name: testerInfo.name, device: testerInfo.device, os: testerInfo.os, platform: testerInfo.platform,
+                test_id: TEST_SESSIONS[currentIndex].id, status: status, steps_to_reproduce: steps, image_url: uploadedImageUrl
             }]);
-
             if (error) { alert(error.message); return; }
-
             uploadedImageUrl = null;
-            if (currentIndex < TEST_SESSIONS.length - 1) {
-                currentIndex++;
-                renderTest();
-                window.scrollTo({top: 0, behavior: 'smooth'});
-            } else {
-                renderFinished();
-            }
+            if (currentIndex < TEST_SESSIONS.length - 1) { currentIndex++; renderTest(); window.scrollTo({top: 0, behavior: 'smooth'}); }
+            else { renderFinished(); }
         }
 
         function nav(dir) {
@@ -171,11 +178,11 @@
             const o = document.getElementById('tOS').value;
             const p = document.getElementById('tPlatform').value;
             if (n && d && o) { testerInfo = { name: n, device: d, os: o, platform: p }; renderTest(); }
-            else alert("Fill all fields!");
+            else alert("Please fill all fields!");
         }
 
         function renderFinished() {
-            app.innerHTML = `<div class="text-center py-20 animate-in"><h1 class="text-4xl font-extrabold mb-4">✨ Done!</h1><p class="text-slate-500 mb-8">All results logged securely.</p><button onclick="location.reload()" class="text-purple-600 font-bold uppercase text-xs tracking-widest">New Session</button></div>`;
+            app.innerHTML = `<div class="text-center py-20 animate-in"><h1 class="text-4xl font-extrabold mb-4 italic">✨ Session Complete!</h1><p class="text-slate-500 mb-8 font-semibold">Thank you for your feedback, Zobrist.</p><button onclick="location.reload()" class="px-8 py-3 bg-white border border-slate-200 text-purple-600 rounded-2xl font-bold uppercase text-[10px] tracking-widest shadow-sm">Restart Session</button></div>`;
         }
 
         window.onload = () => { renderSetup(); };
