@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Circle v3.1.1 | Live Results</title>
+    <title>OG Beta Testers | Client Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
-        .table-container { background: white; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         .status-pass { background: #dcfce7; color: #166534; }
         .status-fail { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .tester-card { transition: all 0.2s ease-in-out; }
+        .test-list { transition: max-height 0.3s ease-in-out; }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -19,18 +20,18 @@
     <div class="max-w-7xl mx-auto">
         <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
             <div>
-                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Live QA Report</h1>
-                <p class="text-slate-500 font-medium">Circle v3.1.1 Master Test Results</p>
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Closed Testing Report</h1>
+                <p class="text-slate-500 font-medium tracking-wide text-sm">Circle v3.1.1 | Organized by Tester</p>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <input type="text" id="searchInput" placeholder="Search by tester, device, or ID..." 
+                <input type="text" id="searchInput" placeholder="Search tester or device..." 
                     class="px-5 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium w-full sm:w-64"
-                    onkeyup="filterTable()">
+                    onkeyup="filterTesters()">
                 
                 <div class="flex gap-2">
-                    <button onclick="fetchResults()" class="px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition shadow-sm text-sm">Refresh</button>
-                    <button onclick="exportToCSV()" class="px-5 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 text-sm whitespace-nowrap">Export to CSV</button>
+                    <button onclick="fetchResults()" class="px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition shadow-sm text-xs uppercase tracking-widest">Refresh</button>
+                    <button onclick="exportToCSV()" class="px-5 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 text-xs uppercase tracking-widest whitespace-nowrap">Export CSV</button>
                 </div>
             </div>
         </div>
@@ -49,42 +50,28 @@
                 <p id="stat-fail" class="text-3xl font-black text-red-600 mt-2">0</p>
             </div>
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <p class="text-[10px] font-extrabold text-purple-500 uppercase tracking-widest">Testers</p>
+                <p class="text-[10px] font-extrabold text-purple-500 uppercase tracking-widest">Active Testers</p>
                 <p id="stat-testers" class="text-3xl font-black text-purple-600 mt-2">0</p>
             </div>
         </div>
 
-        <div class="table-container overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse" id="resultsTable">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200">
-                            <th class="p-5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Date / Time</th>
-                            <th class="p-5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Tester Info</th>
-                            <th class="p-5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Test ID</th>
-                            <th class="p-5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Status</th>
-                            <th class="p-5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest w-1/3">Bug Details</th>
-                            <th class="p-5 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Proof</th>
-                        </tr>
-                    </thead>
-                    <tbody id="results-body">
-                        </tbody>
-                </table>
+        <div id="testers-container" class="space-y-6">
             </div>
-        </div>
     </div>
 
     <script>
         const SB_URL = 'https://shudgqztadlbhiifzlby.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNodWRncXp0YWRsYmhpaWZ6bGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mjg5ODgsImV4cCI6MjA5MDEwNDk4OH0.JytW6-XJ0p2mFcKAZKI0TKPL5TrbuYSYkhDz1DwlZzs';
+        const TOTAL_TEST_CASES = 24; // Used to show completion percentage
 
         const { createClient } = supabase;
         const _supabase = createClient(SB_URL, SB_KEY);
         let allData = [];
+        let groupedData = {};
 
         async function fetchResults() {
-            const body = document.getElementById('results-body');
-            body.innerHTML = `<tr><td colspan="6" class="p-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">Fetching database records...</td></tr>`;
+            const container = document.getElementById('testers-container');
+            container.innerHTML = `<div class="p-20 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">Fetching database records...</div>`;
 
             const { data, error } = await _supabase
                 .from('test_results')
@@ -92,13 +79,13 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                body.innerHTML = `<tr><td colspan="6" class="p-20 text-center text-red-500 font-bold">Database Error: ${error.message}</td></tr>`;
+                container.innerHTML = `<div class="p-20 text-center text-red-500 font-bold">Database Error: ${error.message}</div>`;
                 return;
             }
 
             allData = data;
             renderStats(data);
-            renderTable(data);
+            groupAndRenderTesters(data);
         }
 
         function renderStats(data) {
@@ -108,76 +95,159 @@
             document.getElementById('stat-testers').innerText = [...new Set(data.map(d => d.tester_name))].length;
         }
 
-        function renderTable(data) {
-            const body = document.getElementById('results-body');
-            if (data.length === 0) {
-                body.innerHTML = `<tr><td colspan="6" class="p-20 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">No tests recorded yet</td></tr>`;
+        function groupAndRenderTesters(data) {
+            groupedData = {};
+            
+            // Group data by Tester Name + Device
+            data.forEach(row => {
+                const key = `${row.tester_name}_${row.device}`;
+                if (!groupedData[key]) {
+                    groupedData[key] = {
+                        name: row.tester_name,
+                        platform: row.platform,
+                        device: row.device,
+                        os: row.os || 'N/A',
+                        tests: [],
+                        passed: 0,
+                        failed: 0,
+                        lastActive: row.created_at
+                    };
+                }
+                groupedData[key].tests.push(row);
+                if (row.status === 'PASS') groupedData[key].passed++;
+                if (row.status === 'FAIL') groupedData[key].failed++;
+            });
+
+            const container = document.getElementById('testers-container');
+            if (Object.keys(groupedData).length === 0) {
+                container.innerHTML = `<div class="bg-white p-20 rounded-3xl text-center text-slate-400 font-bold text-xs uppercase tracking-widest shadow-sm">No test sessions recorded yet</div>`;
                 return;
             }
 
-            body.innerHTML = data.map(row => `
-                <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition searchable-row">
-                    <td class="p-5 text-xs text-slate-500 font-medium whitespace-nowrap">
-                        ${new Date(row.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                    </td>
-                    <td class="p-5">
-                        <p class="font-extrabold text-slate-800">${row.tester_name}</p>
-                        <p class="text-[10px] text-slate-400 uppercase font-extrabold tracking-widest mt-1">${row.platform} | ${row.device} | ${row.os || 'N/A'}</p>
-                    </td>
-                    <td class="p-5 font-mono text-sm text-purple-600 font-bold">${row.test_id}</td>
-                    <td class="p-5">
-                        <span class="px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest ${row.status === 'PASS' ? 'status-pass' : 'status-fail'}">
-                            ${row.status}
-                        </span>
-                    </td>
-                    <td class="p-5">
-                        <p class="text-sm text-slate-600 font-medium">${row.steps_to_reproduce || '<span class="italic text-slate-300">Test passed. No issues reported.</span>'}</p>
-                    </td>
-                    <td class="p-5">
-                        ${row.image_url ? 
-                            `<a href="${row.image_url}" target="_blank" class="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-100 transition whitespace-nowrap border border-indigo-100">View Image</a>` : 
-                            `<span class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">N/A</span>`
-                        }
-                    </td>
-                </tr>
-            `).join('');
+            container.innerHTML = Object.values(groupedData).map((tester, index) => {
+                // Sort the individual tests by Test ID so they appear in numerical order
+                const sortedTests = tester.tests.sort((a, b) => a.test_id.localeCompare(b.test_id, undefined, {numeric: true}));
+                
+                return `
+                <div class="tester-card bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden searchable-tester">
+                    
+                    <div class="p-6 md:p-8 cursor-pointer hover:bg-slate-50 transition flex flex-col md:flex-row md:items-center justify-between gap-6" onclick="toggleTester('tester-${index}')">
+                        <div class="flex items-center gap-6">
+                            <div class="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-2xl border border-indigo-100">
+                                ${tester.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight tester-name">${tester.name}</h2>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">${tester.platform} • ${tester.device} • ${tester.os}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-4 items-center">
+                            <div class="text-center px-4 border-r border-slate-100">
+                                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Completion</p>
+                                <p class="font-black text-slate-700">${tester.tests.length} <span class="text-sm font-medium text-slate-400">/ ${TOTAL_TEST_CASES}</span></p>
+                            </div>
+                            <div class="text-center px-4 border-r border-slate-100">
+                                <p class="text-[10px] font-extrabold text-green-500 uppercase tracking-widest mb-1">Passed</p>
+                                <p class="font-black text-green-600">${tester.passed}</p>
+                            </div>
+                            <div class="text-center px-4">
+                                <p class="text-[10px] font-extrabold text-red-500 uppercase tracking-widest mb-1">Bugs</p>
+                                <p class="font-black text-red-600">${tester.failed}</p>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center ml-2 text-slate-400">
+                                ↓
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tester-${index}" class="hidden border-t border-slate-100 bg-slate-50">
+                        <div class="p-6 md:p-8">
+                            <table class="w-full text-left border-collapse bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-100">
+                                        <th class="p-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">ID</th>
+                                        <th class="p-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th class="p-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest w-1/2">Bug Description</th>
+                                        <th class="p-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-right">Screenshot</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${sortedTests.map(t => `
+                                        <tr class="border-b border-slate-50 hover:bg-slate-50/50">
+                                            <td class="p-4 font-mono text-sm font-bold text-slate-500">${t.test_id}</td>
+                                            <td class="p-4">
+                                                <span class="px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${t.status === 'PASS' ? 'status-pass' : 'status-fail'}">
+                                                    ${t.status}
+                                                </span>
+                                            </td>
+                                            <td class="p-4">
+                                                <p class="text-sm font-medium ${t.status === 'FAIL' ? 'text-slate-800' : 'text-slate-400 italic'}">
+                                                    ${t.steps_to_reproduce || 'Tested successfully. No issues.'}
+                                                </p>
+                                            </td>
+                                            <td class="p-4 text-right">
+                                                ${t.image_url ? 
+                                                    `<a href="${t.image_url}" target="_blank" class="inline-block px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-extrabold uppercase tracking-widest hover:bg-indigo-100 border border-indigo-100 transition">View Proof</a>` : 
+                                                    `<span class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">N/A</span>`
+                                                }
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
         }
 
-        function filterTable() {
+        function toggleTester(id) {
+            const element = document.getElementById(id);
+            if (element.classList.contains('hidden')) {
+                element.classList.remove('hidden');
+                element.classList.add('block', 'animate-in');
+            } else {
+                element.classList.add('hidden');
+                element.classList.remove('block', 'animate-in');
+            }
+        }
+
+        function filterTesters() {
             const input = document.getElementById("searchInput").value.toLowerCase();
-            const rows = document.getElementsByClassName("searchable-row");
+            const cards = document.getElementsByClassName("searchable-tester");
             
-            for (let i = 0; i < rows.length; i++) {
-                const text = rows[i].innerText.toLowerCase();
-                rows[i].style.display = text.includes(input) ? "" : "none";
+            for (let i = 0; i < cards.length; i++) {
+                const text = cards[i].querySelector('.tester-name').innerText.toLowerCase();
+                cards[i].style.display = text.includes(input) ? "" : "none";
             }
         }
 
         function exportToCSV() {
             if (allData.length === 0) return alert("No data available to export.");
 
-            const headers = ["Date", "Time", "Tester Name", "Platform", "Device", "OS", "Test ID", "Status", "Bug Details", "Screenshot URL"];
-            const rows = allData.map(r => {
-                const d = new Date(r.created_at);
-                return [
-                    d.toLocaleDateString(),
-                    d.toLocaleTimeString(),
-                    r.tester_name,
-                    r.platform,
-                    r.device,
-                    r.os,
-                    r.test_id,
-                    r.status,
-                    r.steps_to_reproduce ? `"${r.steps_to_reproduce.replace(/"/g, '""')}"` : "",
-                    r.image_url || ""
-                ];
-            });
+            const headers = ["Date", "Tester Name", "Platform", "Device", "OS", "Test ID", "Status", "Bug Details", "Screenshot URL"];
+            // Sort raw data before export to keep CSV clean
+            const sortedData = [...allData].sort((a, b) => a.tester_name.localeCompare(b.tester_name));
+
+            const rows = sortedData.map(r => [
+                new Date(r.created_at).toLocaleDateString(),
+                r.tester_name,
+                r.platform,
+                r.device,
+                r.os,
+                r.test_id,
+                r.status,
+                r.steps_to_reproduce ? `"${r.steps_to_reproduce.replace(/"/g, '""')}"` : "",
+                r.image_url || ""
+            ]);
 
             const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Circle_QA_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute("download", `Closed_Testing_Report_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
