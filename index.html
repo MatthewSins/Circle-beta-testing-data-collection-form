@@ -2,32 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Circle v3.1.1 | Final Test Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; -webkit-tap-highlight-color: transparent; }
         .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); }
         .gradient-text { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="min-h-screen text-slate-900 overflow-x-hidden">
+<body class="min-h-screen text-slate-900">
 
-    <div id="app" class="max-w-xl mx-auto p-6 md:pt-20">
+    <div id="app" class="max-w-xl mx-auto p-5 md:pt-16">
         <div id="loader" class="flex flex-col items-center justify-center mt-40">
             <div class="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-            <p class="text-slate-400 font-medium">Loading Circle Test Suite...</p>
+            <p class="text-slate-400 font-medium tracking-wide">Initializing Circle v3.1.1...</p>
         </div>
     </div>
 
     <script>
-        // --- 1. CONFIGURATION ---
+        // --- 1. CONFIGURATION (REPLACE THESE) ---
         const SB_URL = 'https://shudgqztadlbhiifzlby.supabase.co'; 
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNodWRncXp0YWRsYmhpaWZ6bGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1Mjg5ODgsImV4cCI6MjA5MDEwNDk4OH0.JytW6-XJ0p2mFcKAZKI0TKPL5TrbuYSYkhDz1DwlZzs';
 
-        // Initialize Supabase correctly for CDN
+        // Initialize Supabase
         const { createClient } = supabase;
         const _supabase = createClient(SB_URL, SB_KEY);
 
@@ -41,7 +43,7 @@
         ];
 
         let currentIndex = 0;
-        let testerInfo = { name: '', device: '', platform: 'iOS' };
+        let testerInfo = { name: '', device: '', os: '', platform: 'iOS' };
         let uploadedImageUrl = null;
         const app = document.getElementById('app');
 
@@ -49,28 +51,36 @@
 
         function renderSetup() {
             app.innerHTML = `
-                <div class="glass-card p-8 rounded-[2.5rem] shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="glass-card p-8 rounded-[2.5rem] shadow-2xl animate-in">
                     <h1 class="text-3xl font-extrabold gradient-text mb-1">Circle v3.1.1</h1>
-                    <p class="text-slate-500 mb-8 font-semibold">Internal QA Test Environment</p>
+                    <p class="text-slate-500 mb-8 font-semibold">Final Test Environment</p>
                     
                     <div class="space-y-4">
                         <div>
-                            <label class="text-xs font-bold text-slate-400 uppercase ml-1">Tester Name</label>
-                            <input id="tName" placeholder="e.g. Zobrist" class="w-full mt-1 p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 bg-white/50 transition">
+                            <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 tracking-widest">Tester Name</label>
+                            <input id="tName" placeholder="e.g. Zobrist" class="w-full mt-1 p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 bg-white/50 transition shadow-sm">
                         </div>
+                        
+                        <div>
+                            <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 tracking-widest">Device Model</label>
+                            <input id="tDevice" placeholder="e.g. iPhone 15, Samsung S24" class="w-full mt-1 p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 bg-white/50 shadow-sm">
+                        </div>
+
                         <div class="flex gap-4">
                             <div class="flex-1">
-                                <label class="text-xs font-bold text-slate-400 uppercase ml-1">Device</label>
-                                <input id="tDevice" placeholder="S20, iPhone 13" class="w-full mt-1 p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 bg-white/50">
+                                <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 tracking-widest">OS Version</label>
+                                <input id="tOS" placeholder="e.g. iOS 18, Android 13" class="w-full mt-1 p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-purple-500 bg-white/50 shadow-sm">
                             </div>
                             <div class="w-32">
-                                <label class="text-xs font-bold text-slate-400 uppercase ml-1">OS</label>
-                                <select id="tPlatform" class="w-full mt-1 p-4 rounded-2xl border border-slate-200 bg-white outline-none">
-                                    <option>iOS</option><option>Android</option>
+                                <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 tracking-widest">Platform</label>
+                                <select id="tPlatform" class="w-full mt-1 p-4 rounded-2xl border border-slate-200 bg-white outline-none shadow-sm font-bold text-slate-700">
+                                    <option value="iOS">iOS</option>
+                                    <option value="Android">Android</option>
                                 </select>
                             </div>
                         </div>
-                        <button onclick="startTesting()" class="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-purple-200 transform active:scale-[0.98] transition mt-4">Start Final Test</button>
+
+                        <button onclick="startTesting()" class="w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-purple-100 transform active:scale-[0.98] transition mt-6 text-lg">Start Final Test</button>
                     </div>
                 </div>`;
         }
@@ -80,51 +90,52 @@
             app.innerHTML = `
                 <div class="flex justify-between items-center mb-6 px-2">
                     <span class="px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-extrabold uppercase tracking-widest">${test.section}</span>
-                    <span class="text-sm text-slate-400 font-bold">${currentIndex + 1} / ${TEST_SESSIONS.length}</span>
+                    <span class="text-xs text-slate-400 font-extrabold tracking-tighter">${currentIndex + 1} OF ${TEST_SESSIONS.length}</span>
                 </div>
                 
-                <div class="glass-card rounded-[2.5rem] shadow-xl overflow-hidden border border-white">
+                <div class="glass-card rounded-[2.5rem] shadow-xl overflow-hidden border border-white animate-in">
                     <div class="p-8">
                         <div class="flex items-start gap-4 mb-8">
-                            <span class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-bold text-lg shrink-0">${test.id}</span>
-                            <h2 class="text-2xl font-bold text-slate-800 leading-tight pt-1">${test.title}</h2>
+                            <span class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-bold text-lg shrink-0 shadow-lg shadow-slate-200">${test.id}</span>
+                            <h2 class="text-2xl font-extrabold text-slate-800 leading-tight pt-1">${test.title}</h2>
                         </div>
                         
                         <div class="space-y-4 mb-8">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Test Steps</h3>
+                            <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Test Steps</h3>
                             <ul class="space-y-3">
-                                ${test.steps.map(s => `<li class="flex gap-3 text-slate-600 font-medium"><div class="mt-2 w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0"></div>${s}</li>`).join('')}
+                                ${test.steps.map(s => `<li class="flex gap-3 text-slate-600 font-semibold text-sm leading-relaxed"><div class="mt-2 w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0"></div>${s}</li>`).join('')}
                             </ul>
                         </div>
 
-                        <div class="bg-purple-50/50 p-6 rounded-3xl border border-purple-100/50">
-                            <p class="text-[10px] font-extrabold text-purple-400 uppercase tracking-widest mb-1 text-center">Expected Result</p>
-                            <p class="text-purple-900 font-bold text-center leading-relaxed">${test.expected}</p>
+                        <div class="bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100/50">
+                            <p class="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest mb-1 text-center">Expected Result</p>
+                            <p class="text-indigo-900 font-bold text-center leading-relaxed text-sm">${test.expected}</p>
                         </div>
                     </div>
 
-                    <div id="action-area" class="grid grid-cols-2 border-t border-slate-100">
-                        <button onclick="showFailForm()" class="py-7 font-bold text-red-500 hover:bg-red-50 transition border-r border-slate-100 uppercase tracking-widest text-sm">Fail</button>
-                        <button onclick="submitResult('PASS')" class="py-7 font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 uppercase tracking-widest text-sm">Pass & Next</button>
+                    <div id="action-area" class="grid grid-cols-2 border-t border-slate-100 bg-white/50">
+                        <button onclick="showFailForm()" class="py-8 font-extrabold text-red-500 hover:bg-red-50 transition border-r border-slate-100 uppercase tracking-widest text-xs">Fail</button>
+                        <button onclick="submitResult('PASS')" class="py-8 font-extrabold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 uppercase tracking-widest text-xs">Pass & Next</button>
                     </div>
                 </div>`;
         }
 
         function showFailForm() {
             document.getElementById('action-area').outerHTML = `
-                <div class="p-8 border-t border-slate-100 bg-slate-50/50">
-                    <h3 class="font-bold text-slate-800 mb-4">Report Issue</h3>
-                    <textarea id="failSteps" placeholder="What went wrong? Steps to reproduce..." class="w-full p-4 rounded-2xl border border-slate-200 mb-4 h-32 outline-none focus:ring-2 focus:ring-red-500 bg-white"></textarea>
+                <div class="p-8 border-t border-slate-100 bg-slate-50/50 animate-in">
+                    <h3 class="font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span> Bug Report
+                    </h3>
+                    <textarea id="failSteps" placeholder="Describe the bug..." class="w-full p-5 rounded-2xl border border-slate-200 mb-4 h-32 outline-none focus:ring-2 focus:ring-red-500 bg-white shadow-inner"></textarea>
                     
                     <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="uploadImage(this)">
-                    <button id="upBtn" onclick="document.getElementById('fileInput').click()" class="w-full p-4 mb-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 text-sm font-bold hover:bg-white hover:border-purple-400 transition flex flex-col items-center gap-1">
+                    <button id="upBtn" onclick="document.getElementById('fileInput').click()" class="w-full py-4 mb-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 text-xs font-extrabold hover:bg-white hover:border-purple-400 transition flex flex-col items-center gap-1">
                         <span>Click to Attach Screenshot</span>
-                        <span class="text-[10px] font-normal uppercase italic opacity-60">Photo or Gallery</span>
                     </button>
 
-                    <div class="flex gap-3">
-                        <button onclick="renderTest()" class="flex-1 font-bold text-slate-400 uppercase text-xs">Cancel</button>
-                        <button id="failSubmit" onclick="submitResult('FAIL')" class="flex-[2] py-4 bg-red-500 text-white rounded-2xl font-bold shadow-lg shadow-red-100 uppercase text-xs tracking-widest">Submit Bug</button>
+                    <div class="flex gap-4">
+                        <button onclick="renderTest()" class="flex-1 font-extrabold text-slate-400 uppercase text-[10px] tracking-widest">Cancel</button>
+                        <button id="failSubmit" onclick="submitResult('FAIL')" class="flex-[2] py-4 bg-red-500 text-white rounded-2xl font-extrabold shadow-lg shadow-red-100 uppercase text-xs tracking-widest">Submit Bug</button>
                     </div>
                 </div>`;
         }
@@ -136,7 +147,8 @@
             if (!file) return;
 
             const btn = document.getElementById('upBtn');
-            btn.innerHTML = `<div class="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full mb-2"></div> Uploading...`;
+            btn.innerHTML = `<div class="animate-spin w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full mb-1"></div> Uploading...`;
+            btn.disabled = true;
             
             const fileName = `qa/${Date.now()}_${file.name}`;
             const { data, error } = await _supabase.storage.from('test-screenshots').upload(fileName, file);
@@ -144,24 +156,26 @@
             if (error) {
                 alert("Upload failed: " + error.message);
                 btn.innerText = "Error - Try again";
+                btn.disabled = false;
             } else {
                 const { data: { publicUrl } } = _supabase.storage.from('test-screenshots').getPublicUrl(fileName);
                 uploadedImageUrl = publicUrl;
-                btn.innerHTML = `<span class="text-green-600 font-bold uppercase text-[10px]">✅ Screenshot Attached</span>`;
+                btn.innerHTML = `<span class="text-green-600 font-extrabold uppercase text-[10px]">✅ Screenshot Ready</span>`;
                 btn.classList.add('border-green-300', 'bg-green-50');
+                btn.disabled = false;
             }
         }
 
         async function submitResult(status) {
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Saving...";
+            const btn = event.currentTarget;
+            btn.innerText = "SAVING...";
             btn.disabled = true;
 
             const steps = document.getElementById('failSteps')?.value || '';
             const { error } = await _supabase.from('test_results').insert([{
                 tester_name: testerInfo.name,
                 device: testerInfo.device,
+                os: testerInfo.os,
                 platform: testerInfo.platform,
                 test_id: TEST_SESSIONS[currentIndex].id,
                 status: status,
@@ -170,8 +184,8 @@
             }]);
 
             if (error) {
-                alert("Error saving: " + error.message);
-                btn.innerText = originalText;
+                alert("Database Error: " + error.message);
+                btn.innerText = status === 'PASS' ? "PASS & NEXT" : "SUBMIT BUG";
                 btn.disabled = false;
                 return;
             }
@@ -180,34 +194,39 @@
             if (currentIndex < TEST_SESSIONS.length - 1) {
                 currentIndex++;
                 renderTest();
-                window.scrollTo(0,0);
+                window.scrollTo({top: 0, behavior: 'smooth'});
             } else {
                 renderFinished();
             }
         }
 
         function startTesting() {
-            testerInfo.name = document.getElementById('tName').value;
-            testerInfo.device = document.getElementById('tDevice').value;
-            testerInfo.platform = document.getElementById('tPlatform').value;
-            if (testerInfo.name && testerInfo.device) renderTest();
-            else alert("Please fill in your name and device");
+            const name = document.getElementById('tName').value;
+            const device = document.getElementById('tDevice').value;
+            const os = document.getElementById('tOS').value;
+            const platform = document.getElementById('tPlatform').value;
+
+            if (name && device && os) {
+                testerInfo = { name, device, os, platform };
+                renderTest();
+            } else {
+                alert("Please fill in all fields (Name, Device, and OS Version).");
+            }
         }
 
         function renderFinished() {
             app.innerHTML = `
-                <div class="text-center py-20 px-4 animate-in zoom-in duration-500">
+                <div class="text-center py-20 px-4 animate-in">
                     <div class="text-7xl mb-8">✨</div>
-                    <h1 class="text-4xl font-extrabold text-slate-900 mb-4">Session Complete!</h1>
-                    <p class="text-slate-500 font-medium leading-relaxed max-w-xs mx-auto mb-10">Your feedback has been logged in the master database. You can close this window now.</p>
-                    <button onclick="location.reload()" class="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition">Restart New Session</button>
+                    <h1 class="text-4xl font-extrabold text-slate-900 mb-4">You're All Done!</h1>
+                    <p class="text-slate-500 font-semibold leading-relaxed max-w-xs mx-auto mb-10 text-sm">Every test result and bug has been securely logged. Thank you for helping polish Circle v3.1.1.</p>
+                    <button onclick="location.reload()" class="px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-extrabold shadow-sm hover:bg-slate-50 transition uppercase text-xs tracking-widest">Restart Session</button>
                 </div>`;
         }
 
-        // Entry Point
         window.onload = () => {
             if(SB_URL === 'YOUR_SUPABASE_URL') {
-                document.getElementById('loader').innerHTML = `<p class="text-red-500 font-bold p-10 text-center">Setup Error: Please insert your Supabase API keys into the code.</p>`;
+                document.getElementById('loader').innerHTML = `<p class="text-red-500 font-bold p-10 text-center">Missing API Keys. Please paste your Supabase URL and Key into the index.html code.</p>`;
             } else {
                 renderSetup();
             }
