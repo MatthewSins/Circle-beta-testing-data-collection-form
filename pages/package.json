@@ -1,0 +1,9 @@
+{
+  "name": "qa-app",
+  "private": true,
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest",
+    "@supabase/supabase-js": "latest"
+  }
+}
