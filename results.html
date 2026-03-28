@@ -95,7 +95,7 @@
             document.getElementById('stat-testers').innerText = [...new Set(data.map(d => d.tester_name))].length;
         }
 
-        function groupAndRenderTesters(data) {
+                function groupAndRenderTesters(data) {
             groupedData = {};
             
             // Group data by Tester Name + Device
@@ -107,15 +107,21 @@
                         platform: row.platform,
                         device: row.device,
                         os: row.os || 'N/A',
-                        tests: [],
+                        tests: {}, // Changed from array to object for deduplication
                         passed: 0,
                         failed: 0,
                         lastActive: row.created_at
                     };
                 }
-                groupedData[key].tests.push(row);
-                if (row.status === 'PASS') groupedData[key].passed++;
-                if (row.status === 'FAIL') groupedData[key].failed++;
+                
+                // DEDUPLICATION LOGIC:
+                // Since the data is already sorted newest-to-oldest, we only save the FIRST time we see a specific test_id.
+                // This automatically overwrites their old mistakes with their newest submission!
+                if (!groupedData[key].tests[row.test_id]) {
+                    groupedData[key].tests[row.test_id] = row;
+                    if (row.status === 'PASS') groupedData[key].passed++;
+                    if (row.status === 'FAIL') groupedData[key].failed++;
+                }
             });
 
             const container = document.getElementById('testers-container');
@@ -125,7 +131,9 @@
             }
 
             container.innerHTML = Object.values(groupedData).map((tester, index) => {
-                const sortedTests = tester.tests.sort((a, b) => a.test_id.localeCompare(b.test_id, undefined, {numeric: true}));
+                // Convert the unique tests back into an array so we can sort them
+                const uniqueTestsArray = Object.values(tester.tests);
+                const sortedTests = uniqueTestsArray.sort((a, b) => a.test_id.localeCompare(b.test_id, undefined, {numeric: true}));
                 
                 return `
                 <div class="tester-card bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden searchable-tester">
@@ -144,7 +152,7 @@
                         <div class="flex gap-3 md:gap-4 items-center justify-between md:justify-end w-full md:w-auto mt-2 md:mt-0">
                             <div class="text-center px-2 md:px-4 border-r border-slate-100">
                                 <p class="text-[9px] md:text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Completion</p>
-                                <p class="font-black text-slate-700 text-sm md:text-base">${tester.tests.length} <span class="text-xs font-medium text-slate-400">/ ${TOTAL_TEST_CASES}</span></p>
+                                <p class="font-black text-slate-700 text-sm md:text-base">${uniqueTestsArray.length} <span class="text-xs font-medium text-slate-400">/ ${TOTAL_TEST_CASES}</span></p>
                             </div>
                             <div class="text-center px-2 md:px-4 border-r border-slate-100">
                                 <p class="text-[9px] md:text-[10px] font-extrabold text-green-500 uppercase tracking-widest mb-1">Passed</p>
@@ -203,6 +211,7 @@
                 `;
             }).join('');
         }
+
 
         function toggleTester(id) {
             const element = document.getElementById(id);
